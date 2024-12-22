@@ -1,0 +1,24 @@
+services:
+  server:
+    build:
+      context: ./server
+    container_name: server
+    networks:
+      - conn_network
+    ports:
+      - "8080:8080"
+    command: ./server
+
+  client:
+    build:
+      context: ./client
+    container_name: client
+    networks:
+      - conn_network
+    depends_on:
+      - server
+    command: ./client
+
+networks:
+  conn_network:
+    driver: bridge 

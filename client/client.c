@@ -16,8 +16,9 @@ int main(int argc, char const* argv[])
 
 	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr)); 
 
-	if (connectStatus == -1) { 
-		printf("Error...\n"); 
+	if (connectStatus < 0) { 
+		perror("Error connecting to server\n");
+		exit(1);
 	} 
 
 	else { 

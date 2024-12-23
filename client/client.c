@@ -4,6 +4,19 @@
 #include <sys/socket.h>  
 #include <sys/types.h> 
 
+def sendCommand(int sockD, char *input[]) {
+	printf("Ingrese un comando: ");
+	//Se lee la cadena ingresada.
+	fgets(input, sizeof(input), stdin);
+	//Se reemplaza el último carácter "\n" por uno nulo.
+	input[strcspn(input, "\n")] = 0;
+
+	//Se envian solo los carácteres útiles de la cadena.
+	send(sockD, input, strlen(input), 0)
+
+	return 0;
+}
+
 int main(int argc, char const* argv[]) 
 { 
 	int sockD = socket(AF_INET, SOCK_STREAM, 0); 
@@ -20,14 +33,42 @@ int main(int argc, char const* argv[])
 		perror("Error connecting to server\n");
 		exit(1);
 	} 
+	printf("Connected to server.\n")
 
-	else { 
-		char strData[255]; 
+	char input[255];
 
-		recv(sockD, strData, sizeof(strData), 0); 
+	while (1) {
+		//Se crea un nuevo proceso para enviar el comando al servidor.
+		pit_t pid = fork();
 
-		printf("Message: %s\n", strData); 
-	} 
+		//Proceso hijo.
+		if (pid == 0) {
+			//Se envia el comando mediante sendCommand.
+			sendCommand(sockD, input);
+
+      //Si se envia un carácter vacío entonces termina el proceso hijo.
+      if (strlen(input) == 0) {
+        exit(0);
+      }
+
+			exit(0);
+		} 
+		//Proceso padre.
+		else if (pid > 0) {
+			wait(NULL);
+
+			//Si la cadena enviada tiene 0 caracteres, entonces se rompe el bucle.
+			if (strlen(input) == 0) {
+				break;
+			}
+		} 
+		else {
+			perror("Error creating child process");
+		}
+	}
+
+	close(sockD);
+	printf("Disconnected from server.\n");
 
 	return 0; 
 }

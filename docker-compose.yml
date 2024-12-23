@@ -17,6 +17,9 @@ services:
       - conn_network
     depends_on:
       - server
+    stdin_open: true
+    tty: true
+    command: /bin/sh
 
 networks:
   conn_network:

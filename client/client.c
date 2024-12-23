@@ -12,7 +12,7 @@ int main(int argc, char const* argv[])
 
 	servAddr.sin_family = AF_INET; 
 	servAddr.sin_port = htons(8080);
-	servAddr.sin_addr.s_addr = INADDR_ANY; 
+	servAddr.sin_addr.s_addr = inet_addr("172.18.0.2");
 
 	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr)); 
 

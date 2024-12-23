@@ -1,10 +1,13 @@
 #include <netinet/in.h>
 #include <stdio.h> 
 #include <stdlib.h> 
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/types.h> 
 
-def processInput(char Input[], char *args[]) {
+void processInput(char input, char *args) {
   int i = 0;
 
   char *arg = strtok(input, " ");
@@ -69,7 +72,7 @@ int main(int argc, char const* argv[])
       }
       //Si se envia un carácter vacío entonces termina el proceso hijo.
       else if (bytesReceived == 0) {
-        print("Client disconnected.\n");
+        printf("Client disconnected.\n");
         exit(0);
       }
 

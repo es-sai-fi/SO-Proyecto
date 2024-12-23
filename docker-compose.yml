@@ -17,7 +17,6 @@ services:
       - conn_network
     depends_on:
       - server
-    command: ./client
 
 networks:
   conn_network:

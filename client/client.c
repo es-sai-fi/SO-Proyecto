@@ -1,10 +1,13 @@
 #include <netinet/in.h>
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <sys/socket.h>  
-#include <sys/types.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
-def sendCommand(int sockD, char *input[]) {
+void sendCommand(int sockD, char *input) {
 	printf("Ingrese un comando: ");
 	//Se lee la cadena ingresada.
 	fgets(input, sizeof(input), stdin);
@@ -12,9 +15,7 @@ def sendCommand(int sockD, char *input[]) {
 	input[strcspn(input, "\n")] = 0;
 
 	//Se envian solo los carácteres útiles de la cadena.
-	send(sockD, input, strlen(input), 0)
-
-	return 0;
+	send(sockD, input, strlen(input), 0);
 }
 
 int main(int argc, char const* argv[]) 
@@ -33,13 +34,13 @@ int main(int argc, char const* argv[])
 		perror("Error connecting to server\n");
 		exit(1);
 	} 
-	printf("Connected to server.\n")
+	printf("Connected to server.\n");
 
 	char input[255];
 
 	while (1) {
 		//Se crea un nuevo proceso para enviar el comando al servidor.
-		pit_t pid = fork();
+		pid_t pid = fork();
 
 		//Proceso hijo.
 		if (pid == 0) {

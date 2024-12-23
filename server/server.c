@@ -27,7 +27,6 @@ int main(int argc, char const* argv[])
     perror("Error creating socket");
     exit(1);
   }
-  printf("Socket created successfully.\n");
 
   struct sockaddr_in servAddr; 
 
@@ -39,13 +38,11 @@ int main(int argc, char const* argv[])
     perror("Error binding socket");
     exit(1);
   }
-  printf("Socket bound successfully.\n");
 
   if (listen(servSockD, 1) < 0) {
     perror("Error listening on socket");
     exit(1);
   }
-  printf("Server is listening for connections...\n");
 
   int clientSocket = accept(servSockD, NULL, NULL); 
   if (clientSocket < 0) {

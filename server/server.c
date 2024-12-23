@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <sys/types.h> 
 
-void processInput(char input, char *args) {
+void processInput(char input[], char *args[]) {
   int i = 0;
 
   char *arg = strtok(input, " ");

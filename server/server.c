@@ -51,30 +51,49 @@ int main(int argc, char const* argv[])
   }
   printf("Client connected successfully.\n");
 
-  char input[255];
+  char input[256];
+  char output[1024]
 
   while(1) {
+    //Se crea un pipe para redigir el output y cualquier error ocurrido al padre.
+    int pipefd[2];
+    if (pipe(pipefd) < 0) {
+      perror("Error creating pipe");
+      exit(1);
+    }
     //Se crea un nuevo proceso para atender el comando a ejecutar.
     pid_t pid = fork();
+    if (pid < 0) {
+      perror("Error creating child process");
+      exit(1);
+    }
 
     //Proceso hijo.
     if (pid == 0) {
+      //Se cierra la entrada de lectura del hijo.
+      close(pipefd[0]);
+      //Se redirige el output y cualquier error que genere el hijo hacia el pipe.
+      dup2(pipefd[1], STDOU_FILENO);
+      dup2(pipefd[1], STDERR_FILENO);
+      //Se cierra la entrada de escritura del hijo.
+      close(pipefd[1]);
+
       //Se recibe la cadena.
       size_t bytesReceived = recv(clientSocket, input, sizeof(input), 0);
 
-      //Se verifica que el tamaño de esta sea válido.
+      //Se verifica que no hayan habido errores recibiendo el input.
       if (bytesReceived < 0) {
         perror("Error receiving data");
         exit(1);
       }
-      //Si se envia un carácter vacío entonces termina el proceso hijo.
-      else if (bytesReceived == 0) {
-        printf("Client disconnected.\n");
-        exit(0);
-      }
 
-      //Se convierte el último carácter del input a uno nulo. Esto es importante para funciones como strtok.
+      //Se convierte el carácter siguiente al último del input a uno nulo. Esto es importante para funciones como strtok.
       input[bytesReceived] = '\0';
+
+      //Si la cadena recibida es "salir" entonces se termina el proceso hijo.
+			if (!strcmp(input, "salir")) {
+				exit(0);
+			}
 
       //Se crea el vector de argumentos que recibirá execvp. Se asume que ningún comando tendrá más de 9 argumentos sin contar el comando principal.
       char *args[10];
@@ -82,26 +101,37 @@ int main(int argc, char const* argv[])
       //Se ejecuta la función processInput que se encargará de dividir la cadena.
       processInput(input, args);
 
-      //Se ejecuta execvp.
-      if(execvp(args[0], args) < 0) {
-        perror("Exec failed");
-      }
+      //Se ejecuta el comando mediante execvp.
+      execvp(args[0], args)
 
-      //Termina el proceso hijo.
       exit(0);
     } 
     //Proceso padre.
     else if (pid > 0) {
+      size_t bytesRead;
+
+      //Se espera a que el proceso hijo termine.
       wait(NULL);
 
-      //Si la cadena enviada tiene 0 caracteres, entonces se rompe el bucle.
-      if (strlen(input) == 0) {
-        break;
-      }
+      //Se cierra la entrada de escritura del padre.
+      close(pipefd[1]);
+
+			//Si la cadena recibida es "salir" entonces se rompe el bucle.
+			if (!strcmp(input, "salir")) {
+        close(pipefd[0]);
+				break;
+			}
+
+      //Se lee del pipe y se pasan estos bytes a la variable output.
+      read(pipefd[0], output, sizeof(output)-1) 
+
+      output[bytesRead] = '\0';
+      //Se manda el output al cliente.
+      send(clientSocket, output, bytesRead, 0);
+
+      //Se cierra la entrada de lectura del padre.
+      close(pipefd[0]);
     } 
-    else {
-      perror("Error creating child process");
-    }
   }
 
   close(clientSocket);

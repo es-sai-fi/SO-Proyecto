@@ -9,13 +9,13 @@
 #include <sys/types.h>
 
 void sendCommand(int sockD, char *input) {
-    printf("Ingrese un comando: ");
-    if (fgets(input, 256, stdin) == NULL) { // Se asume que el tamaño del búfer es 256
-        perror("Error leyendo comando");
-        return;
-    }
-    input[strcspn(input, "\n")] = 0; // Elimina el salto de línea
-    send(sockD, input, strlen(input), 0);
+  printf("Ingrese un comando: ");
+  if (fgets(input, 256, stdin) == NULL) {
+    perror("Error reading command");
+    return;
+  }
+  input[strcspn(input, "\n")] = '\0';
+  send(sockD, input, strlen(input), 0);
 }
 
 int main(int argc, char const* argv[]) 
@@ -36,7 +36,8 @@ int main(int argc, char const* argv[])
 	} 
 	printf("Connected to server.\n");
 
-	char input[255];
+	char input[256];
+	char output[1024];
 
 	while (1) {
 		//Se crea un nuevo proceso para enviar el comando al servidor.
@@ -47,10 +48,15 @@ int main(int argc, char const* argv[])
 			//Se envia el comando mediante sendCommand.
 			sendCommand(sockD, input);
 
-      //Si se envia un carácter vacío entonces termina el proceso hijo.
-      if (strlen(input) == 0) {
-        exit(0);
-      }
+			//Si la cadena enviada es "salir" entonces termina el proceso hijo.
+			if (!strcmp(input, "salir")) {
+				exit(0);
+			}
+			
+			//Se recibe el output del comando desde el servidor.
+			recv(sockD, output, sizeof(output), 0);
+
+			printf(output);
 
 			exit(0);
 		} 
@@ -58,8 +64,8 @@ int main(int argc, char const* argv[])
 		else if (pid > 0) {
 			wait(NULL);
 
-			//Si la cadena enviada tiene 0 caracteres, entonces se rompe el bucle.
-			if (strlen(input) == 0) {
+			//Si la cadena enviada es "salir" entonces se rompe el bucle.
+			if (!strcmp(input, "salir")) {
 				break;
 			}
 		} 
@@ -67,7 +73,7 @@ int main(int argc, char const* argv[])
 			perror("Error creating child process");
 		}
 	}
-
+	
 	close(sockD);
 	printf("Disconnected from server.\n");
 

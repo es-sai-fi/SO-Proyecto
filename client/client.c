@@ -9,14 +9,13 @@
 #include <sys/types.h>
 
 void sendCommand(int sockD, char *input) {
-	printf("Ingrese un comando: ");
-	//Se lee la cadena ingresada.
-	fgets(input, sizeof(input), stdin);
-	//Se reemplaza el último carácter "\n" por uno nulo.
-	input[strcspn(input, "\n")] = 0;
-
-	//Se envian solo los carácteres útiles de la cadena.
-	send(sockD, input, strlen(input), 0);
+    printf("Ingrese un comando: ");
+    if (fgets(input, 256, stdin) == NULL) { // Se asume que el tamaño del búfer es 256
+        perror("Error leyendo comando");
+        return;
+    }
+    input[strcspn(input, "\n")] = 0; // Elimina el salto de línea
+    send(sockD, input, strlen(input), 0);
 }
 
 int main(int argc, char const* argv[]) 

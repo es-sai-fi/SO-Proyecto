@@ -9,73 +9,77 @@
 #include <sys/types.h>
 
 void sendCommand(int sockD, char *input) {
-  printf("Ingrese un comando: ");
-  if (fgets(input, 256, stdin) == NULL) {
-    perror("Error reading command");
-    return;
-  }
-  input[strcspn(input, "\n")] = '\0';
-  send(sockD, input, strlen(input), 0);
+    printf("Ingrese un comando: ");
+    fflush(stdout);  // Asegura que el mensaje se imprima de inmediato
+
+    if (fgets(input, 256, stdin) == NULL) {
+        perror("Error reading command");
+        return;
+    }
+
+    // Remover el salto de línea al final
+    size_t len = strlen(input);
+    if (len > 0 && input[len - 1] == '\n') {
+        input[len - 1] = '\0';
+    }
+
+    // Verificar si el comando está vacío
+    if (strlen(input) == 0) {
+        printf("No se ingresó un comando.\n");
+        return;
+    }
+
+    // Enviar comando al servidor
+    if (send(sockD, input, strlen(input), 0) < 0) {
+        perror("Error enviando el comando");
+    }
 }
 
-int main(int argc, char const* argv[]) 
-{ 
-	int sockD = socket(AF_INET, SOCK_STREAM, 0); 
+int main(int argc, char const* argv[]) {
+    int sockD = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockD < 0) {
+        perror("Error creando socket");
+        exit(1);
+    }
 
-	struct sockaddr_in servAddr; 
+    struct sockaddr_in servAddr;
+    servAddr.sin_family = AF_INET;
+    servAddr.sin_port = htons(8080);
+    servAddr.sin_addr.s_addr = inet_addr("172.18.0.2");
 
-	servAddr.sin_family = AF_INET; 
-	servAddr.sin_port = htons(8080);
-	servAddr.sin_addr.s_addr = inet_addr("172.18.0.2");
+    if (connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) {
+        perror("Error conectándose al servidor");
+        exit(1);
+    }
+    printf("Conectado al servidor.\n");
 
-	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr)); 
+    char input[256];
+    char output[1024];
 
-	if (connectStatus < 0) { 
-		perror("Error connecting to server\n");
-		exit(1);
-	} 
-	printf("Connected to server.\n");
+    while (1) {
+        // Leer y enviar comando
+        sendCommand(sockD, input);
 
-	char input[256];
-	char output[1024];
+        // Salir si el comando es "salir"
+        if (strcmp(input, "salir") == 0) {
+            break;
+        }
 
-	while (1) {
-		//Se crea un nuevo proceso para enviar el comando al servidor.
-		pid_t pid = fork();
+        // Recibir respuesta del servidor
+        int bytesReceived = recv(sockD, output, sizeof(output) - 1, 0);
+        if (bytesReceived < 0) {
+            perror("Error recibiendo datos");
+            break;
+        }
 
-		//Proceso hijo.
-		if (pid == 0) {
-			//Se envia el comando mediante sendCommand.
-			sendCommand(sockD, input);
+        // Asegurar que el output sea una cadena válida
+        output[bytesReceived] = '\0';
 
-			//Si la cadena enviada es "salir" entonces termina el proceso hijo.
-			if (!strcmp(input, "salir")) {
-				exit(0);
-			}
-			
-			//Se recibe el output del comando desde el servidor.
-			recv(sockD, output, sizeof(output), 0);
+        // Imprimir la respuesta
+        printf("%s\n", output);
+    }
 
-			printf(output);
-
-			exit(0);
-		} 
-		//Proceso padre.
-		else if (pid > 0) {
-			wait(NULL);
-
-			//Si la cadena enviada es "salir" entonces se rompe el bucle.
-			if (!strcmp(input, "salir")) {
-				break;
-			}
-		} 
-		else {
-			perror("Error creating child process");
-		}
-	}
-	
-	close(sockD);
-	printf("Disconnected from server.\n");
-
-	return 0; 
+    close(sockD);
+    printf("Desconectado del servidor.\n");
+    return 0;
 }

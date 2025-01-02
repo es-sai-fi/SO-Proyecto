@@ -7,6 +7,8 @@ services:
       - conn_network
     ports:
       - "8080:8080"
+    stdin_open: true
+    tty: true
     command: ./server
 
   client:

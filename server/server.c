@@ -13,7 +13,7 @@
 char **processInput(char *input)
 {
   int i;
-  char *token; // Variable para almacenar cada token extraído mediante strtok.
+  char *token;       // Variable para almacenar cada token extraído mediante strtok.
   char *delim = " "; // Delimitador en base al cual se van a separar las tokens.
   char **resultado;
 
@@ -22,7 +22,7 @@ char **processInput(char *input)
   assert(resultado != NULL); // Se verifica que fue exitosa la asignación.
   i = 0;
   token = strtok(input, delim); // Se extrae el primer token.
-  while (token != NULL) // Este bucle seguira funcionando hasta que no haya tokens por extraer.
+  while (token != NULL)         // Este bucle seguira funcionando hasta que no haya tokens por extraer.
   {
     int cad_longitud;
     char **result_temp;
@@ -46,16 +46,12 @@ char **processInput(char *input)
 
 void processInputCd(char input[], char **args)
 {
-  // Si los primeros dos carácteres son cd entonces tratamos al resto del buffer input como el segundo elemento de args.
-  if (strncmp(input, "cd", 2) == 0 && (input[2] == ' ' || input[2] == '\0'))
-  {
-    args[0] = "cd";
+  args[0] = "cd";
 
-    // Dividimos entonces la cadena en input después de los 3 primeros carácteres hasta el final de la cadena.
-    args[1] = strtok(input + 3, "");
+  // Dividimos entonces la cadena en input después de los 3 primeros carácteres hasta el final de la cadena.
+  args[1] = strtok(input + 3, "");
 
-    args[2] = NULL;
-  }
+  args[2] = NULL;
 }
 
 int main(int argc, char const *argv[])
@@ -118,7 +114,8 @@ int main(int argc, char const *argv[])
     // Se convierte el carácter siguiente al último del input a uno nulo. Esto es importante para funciones como strtok.
     input[bytesReceived] = '\0';
 
-    if (strcmp(input, "cd") == 0)
+    // Si los primeros dos carácteres de input son cd y el tercero es " " o un carácter nulo entonces se asume que es solicitud de cd.
+    if (strncmp(input, "cd", 2) == 0 && (input[2] == ' ' || input[2] == '\0'))
     {
       // Se ejecuta otra versión de processInput, esta es para solicitudes de "cd".
       processInputCd(input, args);
